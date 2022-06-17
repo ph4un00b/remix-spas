@@ -22,9 +22,11 @@ export default function Search () {
       })
   }, [query])
 
-  function handleSearchSubmit (e: React.FormEvent) {
+  interface Elements { elements: { search: {value: string} } }
+
+  function handleSearchSubmit (e: React.SyntheticEvent) {
     e.preventDefault()
-    const target = e.target as HTMLFormElement
+    const target = e.target as typeof e.target & Elements
     setQuery(target.elements.search.value)
   }
 

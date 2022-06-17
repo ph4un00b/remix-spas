@@ -75,12 +75,15 @@ const Dialog = React.forwardRef<HTMLInputElement, DialogOpts>(({ children }, ref
   )
 })
 
-function PostForm ({ onSubmit, btnText }: {onSubmit: Function, btnText: string}) {
+interface Elements { elements: { username: {value: string}, password: {value: string} } }
+interface PostFormOpts {onSubmit: Function, btnText: string}
+
+function PostForm ({ onSubmit, btnText }: PostFormOpts) {
   return (
 
     <form onSubmit={(e) => {
       e.preventDefault()
-      const target = e.target as HTMLFormElement
+      const target = e.target as typeof e.target & Elements
       const { username, password } = target.elements
 
       onSubmit({
