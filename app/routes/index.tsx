@@ -1,5 +1,13 @@
 import React, { ReactNode } from 'react'
 import { tw } from 'twind'
+import z from 'zod'
+
+const userValidator = z.object({
+  username: z.string(),
+  password: z.string()
+})
+
+type User = z.infer<typeof userValidator>
 
 export default function Index () {
   const [openModal, setOpenModal] = React.useState<'none' | 'login' | 'register'>('none')
@@ -10,11 +18,11 @@ export default function Index () {
     dialogRef.current.checked = openModal !== 'none'
   }, [openModal])
 
-  function login (formData) {
+  function login (formData: User) {
     console.log('login', formData)
   }
 
-  function signup (formData) {
+  function signup (formData: User) {
     console.log('signup', formData)
   }
   return (
@@ -76,7 +84,7 @@ const Dialog = React.forwardRef<HTMLInputElement, DialogOpts>(({ children }, ref
 })
 
 interface Elements { elements: { username: {value: string}, password: {value: string} } }
-interface PostFormOpts {onSubmit: Function, btnText: string}
+interface PostFormOpts {onSubmit: (data: User) => void, btnText: string}
 
 function PostForm ({ onSubmit, btnText }: PostFormOpts) {
   return (
@@ -86,10 +94,10 @@ function PostForm ({ onSubmit, btnText }: PostFormOpts) {
       const target = e.target as typeof e.target & Elements
       const { username, password } = target.elements
 
-      onSubmit({
+      onSubmit(userValidator.parse({
         username: username.value,
         password: password.value
-      })
+      }))
     }}
     >
 
