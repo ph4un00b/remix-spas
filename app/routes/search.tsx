@@ -1,5 +1,6 @@
 import React from 'react'
 import { tw } from 'twind'
+import { queryURL } from '../utils.client'
 
 export default function Search () {
   const [query, setQuery] = React.useState<string>('')
@@ -14,12 +15,13 @@ export default function Search () {
 
     setStatus('loading')
 
-    window.fetch(`https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(query)}`)
-      .then(async response => await response.json())
-      .then(data => {
+    queryURL(`pokemon/${encodeURIComponent(query)}`)
+      .then(pokedata => {
         setStatus('success')
-        setData(data)
+        setData(pokedata)
+        console.log(pokedata)
       })
+      .catch(console.error)
   }, [query])
 
   interface Elements { elements: { search: {value: string} } }
