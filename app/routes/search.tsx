@@ -9,7 +9,7 @@ export default function Search () {
   const [query, setQuery] = React.useState<string>('')
   const { data, error, isError, isLoading, isSuccess, refetch, isFetching } = useQuery(
     ['pokemon', query],
-    async () => { return await queryURL(`pokemon/${encodeURIComponent(query)}`) },
+    async () => await fetchPokemon(query),
     {
       initialData: () => {
         return queryClient.getQueryData('pokemonos')?.results
@@ -17,13 +17,17 @@ export default function Search () {
           // todo: handle no image better
       },
       enabled: false,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       staleTime: Infinity,
-      cacheTime: Infinity,
+      // cacheTime: Infinity,
       retry: 1
       // retryDelay: () => {}
     }
   )
+
+  React.useEffect(() => {
+    queryClient.prefetchQuery('pokemonos', fetchPokemonos)
+  }, [])
 
   React.useEffect(() => {
     if (query === '') return
@@ -42,7 +46,10 @@ export default function Search () {
     <>
       <button
         className='btn btn-outline btn-warning'
-        onClick={async () => await queryClient.invalidateQueries('pokemonos')}
+        onClick={async () => await queryClient.invalidateQueries('pokemonos', {
+          refetchActive: false,
+          refetchInactive: true //  for future assets!
+        })}
       >invalidate pokemonos!
       </button>
       {isFetching && <Info> Updating...  </Info>}
@@ -115,17 +122,26 @@ function Info ({ children }: {children: React.ReactNode}) {
   )
 }
 
+async function fetchPokemonos () {
+  return await queryURL('pokemon')
+}
+
+async function fetchPokemon (query: string) {
+  return await queryURL(`pokemon/${encodeURIComponent(query)}`)
+}
+
 function Pokemonos () {
+  const queryClient = useQueryClient()
   // todo validate with zod
   const { data, error, isError, isLoading, isSuccess, refetch, isFetching } = useQuery(
     ['pokemonos'],
-    async () => { return await queryURL('pokemon') },
+    fetchPokemonos,
     {
       // initialData: some-data
       enabled: true,
-      // refetchOnWindowFocus: true,
+      refetchOnWindowFocus: true,
       staleTime: Infinity,
-      cacheTime: Infinity,
+      // cacheTime: Infinity,
       retry: 1,
       refetchInterval: 10000,
       refetchIntervalInBackground: false
@@ -152,7 +168,19 @@ function Pokemonos () {
             return (
               <tr key={id}>
                 <th>{id}</th>
-                <th>{pokemon.name}</th>
+                <th>
+                  <a
+                    href='#'
+                    onMouseEnter={
+                      async () => await queryClient.prefetchQuery(['pokemon', pokemon.name],
+                        async () => await fetchPokemon(pokemon.name),
+                        { staleTime: Infinity })
+                    }
+                    className={tw('underline hover:text-green-500')}
+                  >
+                    {pokemon.name}
+                  </a>
+                </th>
                 <th>{pokemon.url}</th>
               </tr>
             )
