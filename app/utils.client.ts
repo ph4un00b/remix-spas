@@ -14,4 +14,6 @@ export async function queryURL (endpoint: string, options: {} = {}) {
       console.log(e)
     }
   }
+
+  return await Promise.reject(Error('response not ok'))
 }
