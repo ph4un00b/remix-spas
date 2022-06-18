@@ -7,6 +7,7 @@ import {
   Scripts,
   ScrollRestoration
 } from '@remix-run/react'
+import { ReactQueryDevtools } from 'react-query/devtools'
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',
@@ -29,6 +30,7 @@ export default function App () {
       </head>
       <body>
         <Outlet />
+        <ReactQueryDevtools initialIsOpen={false} />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

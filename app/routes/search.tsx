@@ -1,31 +1,19 @@
 import React from 'react'
+import { useQuery } from 'react-query'
 import { tw } from 'twind'
 import { queryURL } from '../utils.client'
 
 export default function Search () {
+  const { data, error, isError, isLoading, isSuccess, refetch } = useQuery(
+    'pokemon',
+    async () => { return await queryURL(`pokemon/${encodeURIComponent(query)}`) },
+    { enabled: false, refetchOnWindowFocus: false }
+  )
   const [query, setQuery] = React.useState<string>('')
-  const [data, setData] = React.useState({})
-  const [error, setError] = React.useState<string | null>(null)
-  const [status, setStatus] = React.useState<'error'|'idle'|'loading'|'success'>('idle')
-
-  const isLoading = status === 'loading'
-  const isSuccess = status === 'success'
-  const isError = status === 'error'
 
   React.useEffect(() => {
     if (query === '') return
-
-    setStatus('loading')
-
-    queryURL(`pokemon/${encodeURIComponent(query)}`)
-      .then(pokedata => {
-        setStatus('success')
-        setData(pokedata)
-        console.log(pokedata)
-      }, (reason: Error) => {
-        setError(reason.message)
-        setStatus('error')
-      })
+    refetch()
   }, [query])
 
   interface Elements { elements: { search: {value: string} } }
@@ -35,8 +23,6 @@ export default function Search () {
     const target = e.target as typeof e.target & Elements
     setQuery(target.elements.search.value)
   }
-
-  console.log(query)
 
   return (
     <form onSubmit={handleSearchSubmit}>
@@ -59,7 +45,7 @@ export default function Search () {
               </span>
 
               <span className='label-text-alt'>
-                {error}
+                {JSON.stringify(error, undefined, 2)}
               </span>
             </label>
 

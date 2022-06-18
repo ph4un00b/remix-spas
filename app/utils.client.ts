@@ -1,3 +1,4 @@
+
 export async function queryURL (endpoint: string, options: {} = {}) {
   const config = {
     method: 'get',
