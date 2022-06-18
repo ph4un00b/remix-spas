@@ -40,7 +40,11 @@ export default function Search () {
 
   return (
     <>
-
+      <button
+        className='btn btn-outline btn-warning'
+        onClick={async () => await queryClient.invalidateQueries('pokemonos')}
+      >invalidate pokemonos!
+      </button>
       {isFetching && <Info> Updating...  </Info>}
 
       <form onSubmit={handleSearchSubmit}>
@@ -122,7 +126,9 @@ function Pokemonos () {
       // refetchOnWindowFocus: true,
       staleTime: Infinity,
       cacheTime: Infinity,
-      retry: 1
+      retry: 1,
+      refetchInterval: 10000,
+      refetchIntervalInBackground: false
       // retryDelay: () => {}
     }
   )
