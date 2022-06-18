@@ -5,6 +5,8 @@ export async function queryURL (endpoint: string, options: {} = {}) {
     ...options
   }
 
+  await new Promise(res => setTimeout(res, 1000))
+
   const resp = await window
     .fetch(`https://pokeapi.co/api/v2/${endpoint}`, config)
 
