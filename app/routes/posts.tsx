@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
 
 interface LoaderData {
-  posts: Post[]
+  posts: Awaited<ReturnType<typeof posts>>
 }
 
 export async function loader () {
@@ -29,7 +29,6 @@ export async function action ({ request }: {request: Request}) {
 
   console.log('entries', entries)
 
-  // todo: test for unexpected field or createdAt
   const postValidator = z.object({
     title: z.string(),
     body: z.string().min(1)
@@ -70,8 +69,10 @@ export default function Posts () {
       <ul>
         {posts.map((post) => (
           <li key={post.id}>
+            <pre>{JSON.stringify(post, undefined, 2)}</pre>
             <div>
               <h2>{post.title}</h2>
+              <h3>{post.author.email}</h3>
               <p>{post.body}</p>
             </div>
           </li>
@@ -146,7 +147,7 @@ function PostForm ({ errors, fields, action, onSubmitEvent, btnText }: PostFormO
 
             <label htmlFor='title' className='label'>
               <span className='label-text-alt' />
-              <span className='label-text-alt'>
+              <span className='label-text-alt text-red-400'>
                 {errors.body[0]}
               </span>
             </label>
