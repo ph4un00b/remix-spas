@@ -1,5 +1,5 @@
 import { json, redirect } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { useActionData, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
 
@@ -12,6 +12,17 @@ export async function loader () {
   return json<LoaderData>(data)
 }
 
+interface ActionDataErrors {
+  errors?: {
+    title?: string[]
+    body?: string[]
+  }
+  fields?: {
+    title?: string
+    body?: string
+  }
+}
+
 export async function action ({ request }: {request: Request}) {
   const form = await request.formData()
   const entries = Object.fromEntries(form)
@@ -21,11 +32,21 @@ export async function action ({ request }: {request: Request}) {
   // todo: test for unexpected field or createdAt
   const postValidator = z.object({
     title: z.string(),
-    body: z.string()
+    body: z.string().min(1)
   })
 
-  // todo: handle failed validation
-  const post = await createPost(postValidator.parse(entries))
+  const res = postValidator.safeParse(entries)
+  // const res = postValidator.parse(entries)
+
+  if (!res.success) {
+    const { fieldErrors } = res.error.flatten()
+    return json({
+      errors: { ...fieldErrors },
+      fields: entries
+    }, { status: 400 })
+  }
+
+  const post = await createPost(res.data)
 
   console.log('post', post)
   return redirect('posts')
@@ -33,13 +54,18 @@ export async function action ({ request }: {request: Request}) {
 
 export default function Posts () {
   const { posts } = useLoaderData<LoaderData>()
-  console.log('all-posts', JSON.stringify(posts))
+  const action = useActionData<ActionDataErrors>()
 
   return (
     <>
       <h1>posts!</h1>
 
-      <PostForm action='' onSubmitEvent={() => {}} btnText='create post' />
+      <PostForm
+        action='' onSubmitEvent={() => { }}
+        btnText='create post'
+        errors={action?.errors}
+        fields={action?.fields}
+      />
 
       <ul>
         {posts.map((post) => (
@@ -60,13 +86,13 @@ interface Elements {
   elements: { title: {value: string}, body: {value: string} }
 }
 
-interface PostFormOpts {
+type PostFormOpts = {
   onSubmitEvent: (data: Pick<Post, 'title' | 'body'>) => void,
   btnText: string
   action: string
-}
+} & ActionDataErrors
 
-function PostForm ({ action, onSubmitEvent, btnText }: PostFormOpts) {
+function PostForm ({ errors, fields, action, onSubmitEvent, btnText }: PostFormOpts) {
   return (
 
     <form
@@ -82,6 +108,8 @@ function PostForm ({ action, onSubmitEvent, btnText }: PostFormOpts) {
       }}
     >
 
+      {/* <pre>{JSON.stringify(errors)}</pre> */}
+
       <div className='grid gap-4'>
         <div className='form-control w-full max-w-xs'>
           <label htmlFor='title' className='label'>
@@ -89,9 +117,20 @@ function PostForm ({ action, onSubmitEvent, btnText }: PostFormOpts) {
             <span className='label-text-alt'>Alt label</span>
           </label>
           <input
+            defaultValue={fields?.title}
             name='title' type='text' placeholder='Type here'
             className='input input-bordered w-full max-w-xs'
           />
+          {((errors?.title) != null) && (
+
+            <label htmlFor='title' className='label'>
+              <span className='label-text-alt' />
+              <span className='label-text-alt text-red-400'>
+                {errors.title[0]}
+              </span>
+            </label>
+
+          )}
         </div>
         <div className='form-control w-full max-w-xs'>
           <label htmlFor='body' className='label'>
@@ -99,9 +138,20 @@ function PostForm ({ action, onSubmitEvent, btnText }: PostFormOpts) {
             <span className='label-text-alt'>Alt label</span>
           </label>
           <input
+            defaultValue={fields?.body}
             name='body' type='body' placeholder='Type here'
             className='input input-bordered w-full max-w-xs'
           />
+          {((errors?.body) != null) && (
+
+            <label htmlFor='title' className='label'>
+              <span className='label-text-alt' />
+              <span className='label-text-alt'>
+                {errors.body[0]}
+              </span>
+            </label>
+
+          )}
         </div>
 
         <div className='grid'>
