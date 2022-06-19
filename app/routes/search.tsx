@@ -26,12 +26,12 @@ export default function Search () {
   )
 
   React.useEffect(() => {
-    queryClient.prefetchQuery('pokemonos', fetchPokemonos)
+    void queryClient.prefetchQuery('pokemonos', fetchPokemonos)
   }, [])
 
   React.useEffect(() => {
     if (query === '') return
-    refetch()
+    void refetch()
   }, [query])
 
   interface Elements { elements: { search: {value: string} } }
@@ -52,7 +52,7 @@ export default function Search () {
         })}
       >invalidate pokemonos!
       </button>
-      
+
       {isFetching && <Info> Updating...  </Info>}
 
       <form onSubmit={handleSearchSubmit}>
@@ -91,13 +91,11 @@ export default function Search () {
 
             )}
 
-            {isSuccess && (<>
-              <span>{data.name}</span>
-
-              <img width={80} src={data.sprites?.front_default ?? ''} alt='pokemon' />
-
-            </>
-            )}
+            {isSuccess && (
+              <>
+                <span>{data.name}</span>
+                <img width={80} src={data.sprites?.front_default ?? ''} alt='pokemon' />
+              </>)}
 
           </div>
 
