@@ -52,6 +52,7 @@ export default function Search () {
         })}
       >invalidate pokemonos!
       </button>
+      
       {isFetching && <Info> Updating...  </Info>}
 
       <form onSubmit={handleSearchSubmit}>
