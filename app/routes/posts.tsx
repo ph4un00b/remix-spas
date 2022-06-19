@@ -45,6 +45,7 @@ export async function action ({ request }: {request: Request}) {
     }, { status: 400 })
   }
 
+  // todo: add author from session
   const post = await createPost(res.data)
 
   console.log('post', post)

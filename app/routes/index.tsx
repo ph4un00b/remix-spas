@@ -1,21 +1,58 @@
-import React, { ReactNode } from 'react'
+import { json, redirect } from '@remix-run/node'
+import { useActionData } from '@remix-run/react'
+import React from 'react'
 import { tw } from 'twind'
 import z from 'zod'
+import { createUser } from '~/services/users.server'
 
 const userValidator = z.object({
-  username: z.string(),
-  password: z.string()
+  username: z.string().email(),
+  password: z.string().min(4)
 })
 
 type User = z.infer<typeof userValidator>
 
+interface ActionDataErrors {
+  errors?: {
+    username?: string[]
+    password?: string[]
+  }
+  fields?: {
+    username?: string
+    password?: string
+  }
+}
+
+export async function action ({ request }: {request: Request}) {
+  const form = await request.formData()
+  const data = Object.fromEntries(form)
+
+  const res = userValidator.safeParse(data)
+  if (!res.success) {
+    const { fieldErrors } = res.error.flatten()
+    console.log(fieldErrors)
+    return json({
+      errors: { ...fieldErrors },
+      fields: data
+    }, { status: 400 })
+  }
+
+  await createUser(res.data)
+  return redirect('/')
+}
+
 export default function Index () {
   const [openModal, setOpenModal] = React.useState<'none' | 'login' | 'register'>('none')
   const dialogRef = React.useRef<HTMLInputElement>(null)
+  const action = useActionData<ActionDataErrors>()
 
   React.useEffect(() => {
     if (dialogRef.current === null) return
-    dialogRef.current.checked = openModal !== 'none'
+    if (openModal === 'none') {
+      dialogRef.current.checked = false
+    } else {
+      dialogRef.current.checked = true
+    }
   }, [openModal])
 
   function login (formData: User) {
@@ -25,8 +62,11 @@ export default function Index () {
   function signup (formData: User) {
     console.log('signup', formData)
   }
+
+  console.log('modal', openModal)
   return (
     <>
+      {((action?.errors) != null) && (<pre>{JSON.stringify(action.errors, undefined, 2)}</pre>)}
       {logo}
       <h1>Hey!</h1>
       <div>
@@ -37,7 +77,7 @@ export default function Index () {
         <button onClick={() => setOpenModal('register')}>register</button>
       </div>
 
-      <Dialog ref={dialogRef}>
+      {openModal !== 'none' && <Dialog ref={dialogRef} closeHandler={() => setOpenModal('none')}>
         <h3 className={tw('text-lg font-bold uppercase')}>
           {openModal}
         </h3>
@@ -45,7 +85,7 @@ export default function Index () {
         {openModal === 'login' && (<PostForm onSubmit={login} btnText='login' />)}
         {openModal === 'register' && (<PostForm onSubmit={signup} btnText='signup' />)}
 
-      </Dialog>
+      </Dialog>}
     </>
   )
 }
@@ -57,21 +97,27 @@ const logo = (
 )
 
 type DialogOpts =
-  & { children: ReactNode }
+  & { children: React.ReactNode, closeHandler: () => void }
   & React.HTMLAttributes<HTMLInputElement>
 
-const Dialog = React.forwardRef<HTMLInputElement, DialogOpts>(({ children }, ref) => {
+const Dialog = React.forwardRef<HTMLInputElement, DialogOpts>(({ children, closeHandler }, ref) => {
   return (
 
     <div>
       {/* The button to open modal */}
       {/* <label htmlFor='my-modal-3' className={tw('btn modal-button')}>open modal</label> */}
       {/* Put this part before </body> tag */}
-      <input ref={ref} type='checkbox' id='my-modal-3' className={tw('modal-toggle')} defaultChecked={false} />
+      <input
+        ref={ref} type='checkbox' id='my-modal-3'
+        className={tw('modal-toggle')} defaultChecked={false}
+      />
 
       <div className={tw('modal')}>
         <div className={tw('modal-box relative')}>
-          <label htmlFor='my-modal-3' className={tw('btn btn-sm btn-circle absolute right-2 top-2')}>
+          <label
+            htmlFor='my-modal-3' onClick={closeHandler}
+            className={tw('btn btn-sm btn-circle absolute right-2 top-2')}
+          >
             ✕
           </label>
 
@@ -89,17 +135,7 @@ interface PostFormOpts {onSubmit: (data: User) => void, btnText: string}
 function PostForm ({ onSubmit, btnText }: PostFormOpts) {
   return (
 
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      const target = e.target as typeof e.target & Elements
-      const { username, password } = target.elements
-
-      onSubmit(userValidator.parse({
-        username: username.value,
-        password: password.value
-      }))
-    }}
-    >
+    <form method='post' action='?index'>
 
       <div className={tw('grid gap-4')}>
         <div className='form-control w-full max-w-xs'>
@@ -108,7 +144,7 @@ function PostForm ({ onSubmit, btnText }: PostFormOpts) {
             <span className='label-text-alt'>Alt label</span>
           </label>
           <input
-            id='username' type='text' placeholder='Type here'
+            id='username' name='username' type='text' placeholder='Type here'
             className='input input-bordered w-full max-w-xs'
           />
         </div>
@@ -118,7 +154,7 @@ function PostForm ({ onSubmit, btnText }: PostFormOpts) {
             <span className='label-text-alt'>Alt label</span>
           </label>
           <input
-            id='password' type='password' placeholder='Type here'
+            id='password' name='password' type='password' placeholder='Type here'
             className='input input-bordered w-full max-w-xs'
           />
         </div>
