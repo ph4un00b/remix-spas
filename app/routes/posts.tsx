@@ -47,13 +47,17 @@ export default function Posts () {
   }
 
   const mutation = useMutation(async (data) => {
-    return await fetch('/api/posts', {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const resp = await fetch('/api/post', {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     })
+    if (!resp.ok) throw new Error('Something went wrong!')
   }, {
-    onSuccess: () => { void queryClient.invalidateQueries('posts') }
+    // onSuccess: () => { void queryClient.invalidateQueries('posts') },
+    onError: (e) => { console.log(e) },
+    onSettled: () => { void queryClient.invalidateQueries('posts') }
   }
   )
 
@@ -85,6 +89,8 @@ export default function Posts () {
         errors={action?.errors}
         fields={action?.fields}
       />
+
+      {mutation.isError && <pre>{JSON.stringify(mutation.error.message)}</pre>}
 
       <ul>
         {posts.isSuccess && posts.data?.posts?.map((post) => (
