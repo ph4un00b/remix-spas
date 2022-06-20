@@ -135,7 +135,15 @@ interface PostFormOpts {onSubmit: (data: User) => void, btnText: string}
 function PostForm ({ onSubmit, btnText }: PostFormOpts) {
   return (
 
-    <form method='post' action='?index'>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+
+        console.log('on-submit!')
+        console.log(Object.fromEntries((new FormData(e.target))))
+      }}
+      method='post' action='?index'
+    >
 
       <div className={tw('grid gap-4')}>
         <div className='form-control w-full max-w-xs'>

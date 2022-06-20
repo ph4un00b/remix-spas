@@ -4,6 +4,7 @@ export type { Post } from '@prisma/client'
 
 export function posts () {
   return db.post.findMany({
+    orderBy: [{ updateddAt: 'desc' }],
     include: {
       author: {
         select: { email: true, id: true }

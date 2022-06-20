@@ -1,15 +1,11 @@
 import { json, redirect } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
+import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
 
 interface LoaderData {
   posts: Awaited<ReturnType<typeof posts>>
-}
-
-export async function loader () {
-  const data = { posts: await posts() }
-  return json<LoaderData>(data)
 }
 
 interface ActionDataErrors {
@@ -23,52 +19,75 @@ interface ActionDataErrors {
   }
 }
 
-export async function action ({ request }: {request: Request}) {
-  const form = await request.formData()
-  const entries = Object.fromEntries(form)
+export default function Posts () {
+  const queryClient = useQueryClient()
+  const initialData = useLoaderData<LoaderData>()
+  const action = useActionData<ActionDataErrors>()
 
-  console.log('entries', entries)
+  const posts = useQuery('posts', async () => {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const resp = await fetch('/api/posts', { method: 'get', headers: { 'Content-Type': 'application/json' } })
+    if (!resp.ok) throw new Error('Something went wrong!')
+    return await resp.json()
+  }, { initialData, enabled: true })
 
-  const postValidator = z.object({
-    title: z.string(),
-    body: z.string().min(1)
-  })
+  // async function createPost (data) {
+  //   const resp = await fetch('/api/posts', {
+  //     method: 'post',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify(data)
+  //   })
+  //   console.log('resp', await resp.json())
+  // }
 
-  const res = postValidator.safeParse(entries)
-  // const res = postValidator.parse(entries)
-
-  if (!res.success) {
-    const { fieldErrors } = res.error.flatten()
-    return json({
-      errors: { ...fieldErrors },
-      fields: entries
-    }, { status: 400 })
+  async function createPost (data: Pick<Post, 'title' | 'body'| 'authorId'>) {
+    mutation.mutate(data)
   }
 
-  // todo: add author from session
-  const post = await createPost(res.data)
+  const mutation = useMutation(async (data) => {
+    return await fetch('/api/posts', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+  }, {
+    onSuccess: () => { void queryClient.invalidateQueries('posts') }
+  }
+  )
 
-  console.log('post', post)
-  return redirect('posts')
-}
-
-export default function Posts () {
-  const { posts } = useLoaderData<LoaderData>()
-  const action = useActionData<ActionDataErrors>()
+  console.log('suc', posts.isSuccess)
 
   return (
     <>
       <h1>posts!</h1>
 
+      {posts.isFetching && <pre>updating post...</pre>}
+
+      {posts.isLoading && <pre>loading posts...</pre>}
+
+      {posts.isError && <pre>Error loading posts...</pre>}
+
+      {/* {posts.isSuccess && <pre>{JSON.stringify(posts, undefined, 2)}</pre>} */}
+
       <PostForm
-        action='' onSubmitEvent={() => { }}
-        btnText='create post'
+        action='' onSubmitEvent={createPost}
+        btnText={
+          mutation.isLoading
+            ? 'Saving Post!'
+            : mutation.isError
+              ? 'Error on Post!'
+              : mutation.isSuccess
+                ? 'Post Saved'
+                : 'Create post!'
+          }
         errors={action?.errors}
         fields={action?.fields}
       />
 
       <ul>
-        {posts.map((post) => (
+        {posts.isSuccess && posts.data?.posts?.map((post) => (
           <li key={post.id}>
             <pre>{JSON.stringify(post, undefined, 2)}</pre>
             <div>
@@ -89,7 +108,7 @@ interface Elements {
 }
 
 type PostFormOpts = {
-  onSubmitEvent: (data: Pick<Post, 'title' | 'body'>) => void,
+  onSubmitEvent: (data: Pick<Post, 'title' | 'body'| 'authorId'>) => void
   btnText: string
   action: string
 } & ActionDataErrors
@@ -105,7 +124,8 @@ function PostForm ({ errors, fields, action, onSubmitEvent, btnText }: PostFormO
 
         onSubmitEvent({
           title: title.value,
-          body: body.value
+          body: body.value,
+          authorId: '983a0d4a-5539-4e57-bfa1-254f06e3a70e'
         })
       }}
     >
@@ -169,4 +189,38 @@ function PostForm ({ errors, fields, action, onSubmitEvent, btnText }: PostFormO
     </form>
 
   )
+}
+
+export async function loader () {
+  const data = { posts: await posts() }
+  return json<LoaderData>(data)
+}
+
+export async function action ({ request }: {request: Request}) {
+  const form = await request.formData()
+  const entries = Object.fromEntries(form)
+
+  console.log('entries', entries)
+
+  const postValidator = z.object({
+    title: z.string(),
+    body: z.string().min(1)
+  })
+
+  const res = postValidator.safeParse(entries)
+  // const res = postValidator.parse(entries)
+
+  if (!res.success) {
+    const { fieldErrors } = res.error.flatten()
+    return json({
+      errors: { ...fieldErrors },
+      fields: entries
+    }, { status: 400 })
+  }
+
+  // todo: add author from session
+  const post = await createPost(res.data)
+
+  console.log('post', post)
+  return redirect('posts')
 }
