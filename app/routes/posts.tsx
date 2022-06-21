@@ -1,8 +1,10 @@
+import React from 'react'
 import { json, redirect } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
+import { Route, Router, useRoute } from 'wouter'
 
 interface LoaderData {
   posts: Awaited<ReturnType<typeof posts>>
@@ -19,7 +21,89 @@ interface ActionDataErrors {
   }
 }
 
-export default function Posts () {
+function Rutas () {
+  return (
+    <>
+
+      <Route path='/'>
+        <Posts />
+      </Route>
+
+      <Route path='/edit/:name'>
+        <Post />
+      </Route>
+
+    </>
+
+  )
+}
+
+function Post () {
+  const [,{ postId }] = useRoute('/edit/:postId')
+
+  const postQuery = useQuery(['post', String(postId)], async () => {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const resp = await fetch(`/api/posts/${postId}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
+    if (!resp.ok) throw new Error('Something went wrong!')
+    return await resp.json()
+  })
+
+  const mutation = useMutation(async (values) => {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const resp = await fetch(`/api/posts/${values.id}`, { body: JSON.stringify(values), method: 'post', headers: { 'Content-Type': 'application/json' } })
+    if (!resp.ok) throw new Error('Something went wrong!')
+    return await resp.json()
+  })
+
+  return (
+    <>
+      {postQuery.isFetching && <pre>is fetching...</pre>}
+      {postQuery.isLoading && <pre>is loading...</pre>}
+      {postQuery.isError && <pre>something went wrong!</pre>}
+      {postQuery.isSuccess && (
+        <>
+          <div className='card w-96 bg-base-100 shadow-xl image-full'>
+            <div className='card-body'>
+              <div className='card-actions justify-end'>
+                <p>{postQuery.data.post.id}</p>
+                <p>{postQuery.data.post.title}</p>
+                <p>{postQuery.data.post.body}</p>
+                <p>{postQuery.data.post.author.email}</p>
+              </div>
+            </div>
+
+          </div>
+
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            const data = Object.fromEntries(new FormData(e.target as HTMLFormElement))
+            // console.log(data)
+            mutation.mutate(data)
+          }}
+          >
+            <input type='text' name='title' defaultValue={postQuery.data.post.title} />
+            <input type='hidden' name='id' defaultValue={postQuery.data.post.id} />
+            <br />
+            <button type='submit'>{
+              mutation.isLoading
+                ? 'Saving...'
+                : mutation.isError
+                  ? 'Error!'
+                  : mutation.isSuccess
+                    ? 'Saved!'
+                    : 'Save Post!'
+            }
+            </button>
+          </form>
+        </>
+
+      )}
+
+    </>
+  )
+}
+
+function Posts () {
   const queryClient = useQueryClient()
   const initialData = useLoaderData<LoaderData>()
   const action = useActionData<ActionDataErrors>()
@@ -29,7 +113,7 @@ export default function Posts () {
     const resp = await fetch('/api/posts', { method: 'get', headers: { 'Content-Type': 'application/json' } })
     if (!resp.ok) throw new Error('Something went wrong!')
     return await resp.json()
-  }, { initialData, enabled: true })
+  }, { initialData, enabled: false })
 
   // async function createPost (data) {
   //   const resp = await fetch('/api/posts', {
@@ -61,10 +145,9 @@ export default function Posts () {
   }
   )
 
-  console.log('suc', posts.isSuccess)
-
   return (
     <>
+      {((action?.errors) != null) && <pre>{JSON.stringify(action.errors, undefined, 2)}</pre>}
       <h1>posts!</h1>
 
       {posts.isFetching && <pre>updating post...</pre>}
@@ -93,20 +176,80 @@ export default function Posts () {
       {mutation.isError && <pre>{JSON.stringify(mutation.error.message)}</pre>}
 
       <ul>
-        {posts.isSuccess && posts.data?.posts?.map((post) => (
+        {posts.isSuccess && posts.data?.posts?.map((post, idx) => (
+
           <li key={post.id}>
-            <pre>{JSON.stringify(post, undefined, 2)}</pre>
-            <div>
-              <h2>{post.title}</h2>
-              <h3>{post.author.email}</h3>
-              <p>{post.body}</p>
+
+            <div className='card w-96 bg-base-100 shadow-xl image-full'>
+              <figure><img src='https://api.lorem.space/image/fashion?w=400&h=225' alt='Shoes' /></figure>
+              <div className='card-body'>
+                <pre>{JSON.stringify(post, undefined, 2)}</pre>
+                <div className='card-actions justify-end'>
+                  <button
+                    onClick={() => navigate(`#/edit/${post.id}`)}
+                    className='btn btn-primary'
+                  >Edit Post
+                  </button>
+                </div>
+              </div>
             </div>
+
           </li>
         ))}
       </ul>
 
     </>
   )
+}
+
+function isBrowser (): boolean {
+  return typeof document !== 'undefined'
+}
+
+// returns the current hash location in a normalized form
+// (excluding the leading '#' symbol)
+function currentLocation () {
+  return window.location.hash.replace(/^#/, '') || '/'
+}
+
+function navigate (to: string) {
+  return (window.location.hash = to)
+}
+
+function useHashLocation (): [location: string, setLocation: (to: string) => string] {
+  const [loc, setLoc] = React.useState(currentLocation())
+
+  React.useEffect(() => {
+    // this function is called whenever the hash changes
+    const handler = () => setLoc(currentLocation())
+
+    // subscribe to hash changes
+    window.addEventListener('hashchange', handler)
+    return () => window.removeEventListener('hashchange', handler)
+  }, [])
+
+  return [loc, navigate]
+}
+
+export default function App () {
+  if (isBrowser()) {
+    return (
+      <>
+        <a onClick={() => { navigate('#/') }}>posts home</a>
+
+        <Router hook={useHashLocation}>
+          <Rutas />
+        </Router>
+      </>
+    )
+  } else {
+    return (
+      <>
+        <a onClick={() => { navigate('#/') }}>posts home</a>
+        <Posts />
+      </>
+    )
+  }
 }
 
 interface Elements {
@@ -210,7 +353,8 @@ export async function action ({ request }: {request: Request}) {
 
   const postValidator = z.object({
     title: z.string(),
-    body: z.string().min(1)
+    body: z.string().min(1),
+    authorId: z.string().uuid()
   })
 
   const res = postValidator.safeParse(entries)
@@ -225,6 +369,7 @@ export async function action ({ request }: {request: Request}) {
   }
 
   // todo: add author from session
+  // todo: handle application errors not just validation errors
   const post = await createPost(res.data)
 
   console.log('post', post)

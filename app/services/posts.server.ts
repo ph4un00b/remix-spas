@@ -1,4 +1,5 @@
 import type { Post } from '@prisma/client'
+import { z } from 'zod'
 import { db } from '~/utils.server'
 export type { Post } from '@prisma/client'
 
