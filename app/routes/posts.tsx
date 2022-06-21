@@ -39,6 +39,7 @@ function Rutas () {
 }
 
 function Post () {
+  const queryClient = useQueryClient()
   const [,{ postId }] = useRoute('/edit/:postId')
 
   const postQuery = useQuery(['post', String(postId)], async () => {
@@ -53,6 +54,13 @@ function Post () {
     const resp = await fetch(`/api/posts/${values.id}`, { body: JSON.stringify(values), method: 'post', headers: { 'Content-Type': 'application/json' } })
     if (!resp.ok) throw new Error('Something went wrong!')
     return await resp.json()
+  }, {
+    onSuccess: (dataResponse, currentValues) => {
+      console.log(dataResponse, currentValues)
+      // todo: need author data and validate data before
+      // void queryClient.setQueryData(['post', currentValues.id], {post: dataResponse})
+      void queryClient.invalidateQueries(['post', currentValues.id])
+    }
   })
 
   return (
@@ -132,16 +140,39 @@ function Posts () {
 
   const mutation = useMutation(async (data) => {
     await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch('/api/post', {
+    const resp = await fetch('/api/posts', {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     })
     if (!resp.ok) throw new Error('Something went wrong!')
   }, {
+    onMutate: (currentValues) => {
+      queryClient.setQueryData('posts', (oldPosts) => {
+        console.log(oldPosts, new Date().toISOString())
+        // return oldPosts
+        // todo: handle desc order
+        return {
+          posts: [
+            ...oldPosts.posts,
+            {
+              ...currentValues,
+              // fake data below
+              id: Date.now(),
+              createdAt: new Date().toISOString(),
+              updateddAt: new Date().toISOString()
+            }
+          ]
+        }
+      })
+    },
     // onSuccess: () => { void queryClient.invalidateQueries('posts') },
     onError: (e) => { console.log(e) },
-    onSettled: () => { void queryClient.invalidateQueries('posts') }
+    onSettled: () => {
+      void queryClient.invalidateQueries('posts', {
+        refetchInactive: true
+      })
+    }
   }
   )
 
