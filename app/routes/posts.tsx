@@ -1,10 +1,11 @@
 import React from 'react'
-import { json, redirect } from '@remix-run/node'
+import { json, LoaderFunction, redirect } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
 import { Route, Router, useRoute } from 'wouter'
+import { tw } from 'twind'
 
 interface LoaderData {
   posts: Awaited<ReturnType<typeof posts>>
@@ -130,6 +131,7 @@ function Post () {
 }
 
 function Posts () {
+  const [page, setPage] = React.useState<number>(0)
   const queryClient = useQueryClient()
   const initialData = useLoaderData<LoaderData>()
   const action = useActionData<ActionDataErrors>()
@@ -231,6 +233,9 @@ function Posts () {
 
       {mutation.isError && <pre>{JSON.stringify(mutation.error.message)}</pre>}
 
+      <button className={tw('btn btn-prymary mr-44')} onClick={(old) => setPage(old => old - 1)}>Prev</button>
+      <button className='btn btn-secondary' onClick={(old) => setPage(old => old + 1)}>Next</button>
+      <span>current page: {page + 1} {posts.isFetching ? '...' : ''}</span>
       <ul>
         {posts.isSuccess && posts.data?.posts?.map((post, idx) => (
 
@@ -396,8 +401,15 @@ function PostForm ({ errors, fields, action, onSubmitEvent, btnText }: PostFormO
   )
 }
 
-export async function loader () {
-  const data = { posts: await posts() }
+export const loader: LoaderFunction = async ({ request }) => {
+  const url = new URL(request.url)
+  const limit = Number(url.searchParams.get('limit') ?? 4)
+  const page = Number(url.searchParams.get('page') ?? 1)
+
+  const start = (page - 1) * limit
+  const end = page * limit
+
+  const data = { posts: await posts(start, end, limit) }
   return json<LoaderData>(data)
 }
 

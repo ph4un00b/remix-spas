@@ -3,8 +3,10 @@ import { z } from 'zod'
 import { db } from '~/utils.server'
 export type { Post } from '@prisma/client'
 
-export function posts () {
+export function posts (start: number, end: number, limit: number) {
   return db.post.findMany({
+    skip: start,
+    take: limit,
     orderBy: [{ updateddAt: 'desc' }],
     include: {
       author: {
