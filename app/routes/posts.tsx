@@ -55,10 +55,28 @@ function Post () {
     if (!resp.ok) throw new Error('Something went wrong!')
     return await resp.json()
   }, {
-    onSuccess: (dataResponse, currentValues) => {
-      console.log(dataResponse, currentValues)
-      // todo: need author data and validate data before
-      // void queryClient.setQueryData(['post', currentValues.id], {post: dataResponse})
+    onMutate: (currentValues) => {
+      // prevent rece conditions
+      queryClient.cancelQueries(['post', currentValues.id])
+
+      const oldData = queryClient.getQueryData(['post', currentValues.id])
+
+      queryClient.setQueryData(['post', currentValues.id], (old) => {
+        console.log(old, currentValues)
+        return {
+          post: {
+            ...old.post,
+            ...currentValues
+          }
+        }
+      })
+
+      return () => void queryClient.setQueryData(['post', currentValues.id], oldData)
+    },
+    onError: (e, vals, rollbackFn) => {
+      if (rollbackFn) rollbackFn()
+    },
+    onSettled: (dataResponse, e, currentValues) => {
       void queryClient.invalidateQueries(['post', currentValues.id])
     }
   })
@@ -161,9 +179,9 @@ function Posts () {
             {
               ...currentValues,
               // fake data below
-              id: Date.now(),
+              id: Date.now()
             },
-            ...oldPosts.posts,
+            ...oldPosts.posts
           ]
         }
       })
@@ -171,9 +189,9 @@ function Posts () {
       return () => void queryClient.setQueryData('post', oldPost)
     },
     // onSuccess: () => { void queryClient.invalidateQueries('posts') },
-    onError: (e, currentValues, rollbackCallback) => { 
+    onError: (e, currentValues, rollbackCallback) => {
       console.log(e)
-      if (rollbackCallback) rollbackCallback() 
+      if (rollbackCallback) rollbackCallback()
     },
     onSettled: () => {
       void queryClient.invalidateQueries('posts', {
