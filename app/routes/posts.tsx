@@ -148,26 +148,33 @@ function Posts () {
     if (!resp.ok) throw new Error('Something went wrong!')
   }, {
     onMutate: (currentValues) => {
+      // prevent race conditions!
+      queryClient.cancelQueries('posts')
+
+      const oldPost = queryClient.getQueryData('posts')
+
       queryClient.setQueryData('posts', (oldPosts) => {
         console.log(oldPosts, new Date().toISOString())
         // return oldPosts
-        // todo: handle desc order
         return {
           posts: [
-            ...oldPosts.posts,
             {
               ...currentValues,
               // fake data below
               id: Date.now(),
-              createdAt: new Date().toISOString(),
-              updateddAt: new Date().toISOString()
-            }
+            },
+            ...oldPosts.posts,
           ]
         }
       })
+
+      return () => void queryClient.setQueryData('post', oldPost)
     },
     // onSuccess: () => { void queryClient.invalidateQueries('posts') },
-    onError: (e) => { console.log(e) },
+    onError: (e, currentValues, rollbackCallback) => { 
+      console.log(e)
+      if (rollbackCallback) rollbackCallback() 
+    },
     onSettled: () => {
       void queryClient.invalidateQueries('posts', {
         refetchInactive: true
