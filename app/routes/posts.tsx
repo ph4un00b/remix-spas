@@ -31,7 +31,7 @@ function Rutas () {
       </Route>
 
       <Route path='/edit/:name'>
-        <Post />
+        <SinglePost />
       </Route>
 
     </>
@@ -39,7 +39,7 @@ function Rutas () {
   )
 }
 
-function Post () {
+function SinglePost () {
   const queryClient = useQueryClient()
   const [,{ postId }] = useRoute('/edit/:postId')
 
@@ -58,7 +58,7 @@ function Post () {
   }, {
     onMutate: (currentValues) => {
       // prevent rece conditions
-      queryClient.cancelQueries(['post', currentValues.id])
+      void queryClient.cancelQueries(['post', currentValues.id])
 
       const oldData = queryClient.getQueryData(['post', currentValues.id])
 
@@ -72,7 +72,7 @@ function Post () {
         }
       })
 
-      return () => void queryClient.setQueryData(['post', currentValues.id], oldData)
+      return () => queryClient.setQueryData(['post', currentValues.id], oldData)
     },
     onError: (e, vals, rollbackFn) => {
       if (rollbackFn) rollbackFn()
@@ -131,17 +131,17 @@ function Post () {
 }
 
 function Posts () {
-  const [page, setPage] = React.useState<number>(0)
+  const [page, setPage] = React.useState<number>(1)
   const queryClient = useQueryClient()
   const initialData = useLoaderData<LoaderData>()
   const action = useActionData<ActionDataErrors>()
 
-  const posts = useQuery('posts', async () => {
+  const posts = useQuery(['posts', { page }], async () => {
     await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch('/api/posts', { method: 'get', headers: { 'Content-Type': 'application/json' } })
+    const resp = await fetch(`/api/posts?page=${page}&limit=${10}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
     if (!resp.ok) throw new Error('Something went wrong!')
     return await resp.json()
-  }, { initialData, enabled: false })
+  }, { initialData, enabled: true, keepPreviousData: true })
 
   // async function createPost (data) {
   //   const resp = await fetch('/api/posts', {
@@ -169,7 +169,7 @@ function Posts () {
   }, {
     onMutate: (currentValues) => {
       // prevent race conditions!
-      queryClient.cancelQueries('posts')
+      void queryClient.cancelQueries('posts')
 
       const oldPost = queryClient.getQueryData('posts')
 
@@ -188,7 +188,7 @@ function Posts () {
         }
       })
 
-      return () => void queryClient.setQueryData('post', oldPost)
+      return () => queryClient.setQueryData('post', oldPost)
     },
     // onSuccess: () => { void queryClient.invalidateQueries('posts') },
     onError: (e, currentValues, rollbackCallback) => {
@@ -233,9 +233,22 @@ function Posts () {
 
       {mutation.isError && <pre>{JSON.stringify(mutation.error.message)}</pre>}
 
-      <button className={tw('btn btn-prymary mr-44')} onClick={(old) => setPage(old => old - 1)}>Prev</button>
-      <button className='btn btn-secondary' onClick={(old) => setPage(old => old + 1)}>Next</button>
-      <span>current page: {page + 1} {posts.isFetching ? '...' : ''}</span>
+      <button
+        disabled={page === 1}
+        className={tw('btn btn-prymary mr-44')} onClick={(old) => setPage(old => old - 1)}
+      >
+        Prev
+      </button>
+
+      <button
+        disabled={posts.isFetching || !posts.data?.next}
+        className='btn btn-secondary' onClick={(old) => setPage(old => old + 1)}
+      >
+        Next
+      </button>
+
+      <span>current page: {page} {posts.isFetching ? '...' : ''}</span>
+
       <ul>
         {posts.isSuccess && posts.data?.posts?.map((post, idx) => (
 

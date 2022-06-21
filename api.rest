@@ -7,5 +7,5 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:3000/api/posts?page=2&limit=2
+GET http://localhost:3000/api/posts?page=4&limit=10
 Content-Type: application/json

@@ -1,12 +1,16 @@
 import { json, LoaderFunction } from '@remix-run/node'
 import { z } from 'zod'
 import { createPost, posts } from '~/services/posts.server'
+import { db } from '~/utils.server'
 
 interface LoaderData {
+  next?: { page: number, limit: number}
+  prev?: { page: number, limit: number}
+  total: number
   posts: Awaited<ReturnType<typeof posts>>
 }
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url)
   const limit = Number(url.searchParams.get('limit') ?? 4)
   const page = Number(url.searchParams.get('page') ?? 1)
@@ -14,7 +18,20 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const start = (page - 1) * limit
   const end = page * limit
 
-  const data = { posts: await posts(start, end, limit) }
+  const postsCount = await db.post.count()
+  const data: LoaderData = {
+    posts: await posts(start, end, limit),
+    total: postsCount
+  }
+
+  if (end < postsCount) {
+    data.next = { page: page + 1, limit }
+  }
+
+  if (start > 0) {
+    data.prev = { page: page - 1, limit }
+  }
+
   return json<LoaderData>(data)
 }
 
