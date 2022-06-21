@@ -130,18 +130,24 @@ function SinglePost () {
   )
 }
 
+async function fetchPosts ({ queryKey }) {
+  const [,{ page }] = queryKey
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  const resp = await fetch(`/api/posts?page=${page}&limit=${10}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
+  if (!resp.ok) { throw new Error('Something went wrong!') }
+  return await resp.json()
+}
+
 function Posts () {
   const [page, setPage] = React.useState<number>(1)
   const queryClient = useQueryClient()
   const initialData = useLoaderData<LoaderData>()
   const action = useActionData<ActionDataErrors>()
 
-  const posts = useQuery(['posts', { page }], async () => {
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch(`/api/posts?page=${page}&limit=${10}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
-    if (!resp.ok) throw new Error('Something went wrong!')
-    return await resp.json()
-  }, { initialData, enabled: true, keepPreviousData: true })
+  const posts = useQuery(['posts', { page }], fetchPosts,
+    { initialData, enabled: true, keepPreviousData: true })
+
+  const nextPage: number | undefined = posts.data?.next?.page
 
   // async function createPost (data) {
   //   const resp = await fetch('/api/posts', {
@@ -153,6 +159,11 @@ function Posts () {
   //   })
   //   console.log('resp', await resp.json())
   // }
+
+  React.useEffect(() => {
+    if (nextPage === undefined) return
+    queryClient.prefetchQuery(['posts', { page: nextPage }], fetchPosts)
+  }, [nextPage])
 
   async function createPost (data: Pick<Post, 'title' | 'body'| 'authorId'>) {
     mutation.mutate(data)
@@ -168,6 +179,8 @@ function Posts () {
     if (!resp.ok) throw new Error('Something went wrong!')
   }, {
     onMutate: (currentValues) => {
+      console.log('currentValues', currentValues)
+      // todo:  validate data before
       // prevent race conditions!
       void queryClient.cancelQueries('posts')
 
@@ -192,7 +205,7 @@ function Posts () {
     },
     // onSuccess: () => { void queryClient.invalidateQueries('posts') },
     onError: (e, currentValues, rollbackCallback) => {
-      console.log(e)
+      // console.log(e)
       if (rollbackCallback) rollbackCallback()
     },
     onSettled: () => {
@@ -240,8 +253,9 @@ function Posts () {
         Prev
       </button>
 
+      {/* todo: handle better UX when user clicks quickly */}
       <button
-        disabled={posts.isFetching || !posts.data?.next}
+        disabled={!posts.data?.next}
         className='btn btn-secondary' onClick={(old) => setPage(old => old + 1)}
       >
         Next
