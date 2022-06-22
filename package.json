@@ -4,15 +4,23 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev",
-    "start": "remix-serve build"
+    "start": "remix-serve build",
+    "dev:db:init": "prisma init --datasource-provider sqlite",
+    "dev:db:push": "prisma db push",
+    "dev:db": "prisma studio",
+    "create:schema": "quicktype single-pokemon.json -l schema -o schema-single-pokemon.json",
+    "create:types": "quicktype -s schema schema-single-pokemon.json -o single-pokemon.ts"
   },
   "dependencies": {
+    "@prisma/client": "^3.15.2",
     "@remix-run/node": "^1.6.0",
     "@remix-run/react": "^1.6.0",
     "@remix-run/serve": "^1.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-query": "^3.39.1",
     "twind": "^0.16.17",
+    "wouter": "^2.8.0-alpha.2",
     "zod": "^3.17.3"
   },
   "devDependencies": {
@@ -21,6 +29,8 @@
     "@types/react": "^17.0.45",
     "@types/react-dom": "^17.0.17",
     "eslint": "^8.15.0",
+    "prisma": "^3.15.2",
+    "quicktype": "^15.0.261",
     "typescript": "^4.6.4"
   },
   "engines": {

@@ -1,0 +1,11 @@
+GET http://localhost:3000/api/posts
+
+###
+
+GET http://localhost:3000/api/posts/54c731f5-c456-436d-9c61-c5fbba49509a
+Content-Type: application/json
+
+###
+
+GET http://localhost:3000/api/posts?page=4&limit=10
+Content-Type: application/json

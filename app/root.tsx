@@ -7,6 +7,8 @@ import {
   Scripts,
   ScrollRestoration
 } from '@remix-run/react'
+import { ReactQueryDevtools } from 'react-query/devtools'
+import { tw } from 'twind'
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',
@@ -27,8 +29,9 @@ export default function App () {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className={tw('px-8 py-10')}>
         <Outlet />
+        <ReactQueryDevtools initialIsOpen={false} />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

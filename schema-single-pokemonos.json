@@ -1,0 +1,869 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/SchemaSinglePokemonos",
+    "definitions": {
+        "SchemaSinglePokemonos": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "abilities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Ability"
+                    }
+                },
+                "base_experience": {
+                    "type": "integer"
+                },
+                "forms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Species"
+                    }
+                },
+                "game_indices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GameIndex"
+                    }
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "held_items": {
+                    "type": "array",
+                    "items": {}
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "location_area_encounters": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "moves": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Move"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "past_types": {
+                    "type": "array",
+                    "items": {}
+                },
+                "species": {
+                    "$ref": "#/definitions/Species"
+                },
+                "sprites": {
+                    "$ref": "#/definitions/Sprites"
+                },
+                "stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Stat"
+                    }
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Type"
+                    }
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "abilities",
+                "base_experience",
+                "forms",
+                "game_indices",
+                "height",
+                "held_items",
+                "id",
+                "is_default",
+                "location_area_encounters",
+                "moves",
+                "name",
+                "order",
+                "past_types",
+                "species",
+                "sprites",
+                "stats",
+                "types",
+                "weight"
+            ],
+            "title": "SchemaSinglePokemonos"
+        },
+        "Ability": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "ability": {
+                    "$ref": "#/definitions/Species"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "slot": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "ability",
+                "is_hidden",
+                "slot"
+            ],
+            "title": "Ability"
+        },
+        "Species": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "url"
+            ],
+            "title": "Species"
+        },
+        "GameIndex": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "game_index": {
+                    "type": "integer"
+                },
+                "version": {
+                    "$ref": "#/definitions/Species"
+                }
+            },
+            "required": [
+                "game_index",
+                "version"
+            ],
+            "title": "GameIndex"
+        },
+        "Move": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "move": {
+                    "$ref": "#/definitions/Species"
+                },
+                "version_group_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VersionGroupDetail"
+                    }
+                }
+            },
+            "required": [
+                "move",
+                "version_group_details"
+            ],
+            "title": "Move"
+        },
+        "VersionGroupDetail": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "level_learned_at": {
+                    "type": "integer"
+                },
+                "move_learn_method": {
+                    "$ref": "#/definitions/Species"
+                },
+                "version_group": {
+                    "$ref": "#/definitions/Species"
+                }
+            },
+            "required": [
+                "level_learned_at",
+                "move_learn_method",
+                "version_group"
+            ],
+            "title": "VersionGroupDetail"
+        },
+        "Sprites": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "back_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".gif",
+                        ".png"
+                    ]
+                },
+                "back_female": {
+                    "type": "null"
+                },
+                "back_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".gif",
+                        ".png"
+                    ]
+                },
+                "back_shiny_female": {
+                    "type": "null"
+                },
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".gif",
+                        ".png"
+                    ]
+                },
+                "front_female": {
+                    "type": "null"
+                },
+                "front_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".gif",
+                        ".png"
+                    ]
+                },
+                "front_shiny_female": {
+                    "type": "null"
+                },
+                "other": {
+                    "$ref": "#/definitions/Other"
+                },
+                "versions": {
+                    "$ref": "#/definitions/Versions"
+                },
+                "animated": {
+                    "$ref": "#/definitions/Sprites"
+                }
+            },
+            "required": [
+                "back_default",
+                "back_female",
+                "back_shiny",
+                "back_shiny_female",
+                "front_default",
+                "front_female",
+                "front_shiny",
+                "front_shiny_female"
+            ],
+            "title": "Sprites"
+        },
+        "Other": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "dream_world": {
+                    "$ref": "#/definitions/DreamWorld"
+                },
+                "home": {
+                    "$ref": "#/definitions/Home"
+                },
+                "official-artwork": {
+                    "$ref": "#/definitions/OfficialArtwork"
+                }
+            },
+            "required": [
+                "dream_world",
+                "home",
+                "official-artwork"
+            ],
+            "title": "Other"
+        },
+        "DreamWorld": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png",
+                        ".svg"
+                    ]
+                },
+                "front_female": {
+                    "type": "null"
+                }
+            },
+            "required": [
+                "front_default",
+                "front_female"
+            ],
+            "title": "DreamWorld"
+        },
+        "OfficialArtwork": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                }
+            },
+            "required": [
+                "front_default"
+            ],
+            "title": "OfficialArtwork"
+        },
+        "Versions": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "generation-i": {
+                    "$ref": "#/definitions/GenerationI"
+                },
+                "generation-ii": {
+                    "$ref": "#/definitions/GenerationIi"
+                },
+                "generation-iii": {
+                    "$ref": "#/definitions/GenerationIii"
+                },
+                "generation-iv": {
+                    "$ref": "#/definitions/GenerationIv"
+                },
+                "generation-v": {
+                    "$ref": "#/definitions/GenerationV"
+                },
+                "generation-vi": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Home"
+                    }
+                },
+                "generation-vii": {
+                    "$ref": "#/definitions/GenerationVii"
+                },
+                "generation-viii": {
+                    "$ref": "#/definitions/GenerationViii"
+                }
+            },
+            "required": [
+                "generation-i",
+                "generation-ii",
+                "generation-iii",
+                "generation-iv",
+                "generation-v",
+                "generation-vi",
+                "generation-vii",
+                "generation-viii"
+            ],
+            "title": "Versions"
+        },
+        "GenerationI": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "red-blue": {
+                    "$ref": "#/definitions/RedBlue"
+                },
+                "yellow": {
+                    "$ref": "#/definitions/RedBlue"
+                }
+            },
+            "required": [
+                "red-blue",
+                "yellow"
+            ],
+            "title": "GenerationI"
+        },
+        "RedBlue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "back_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_gray": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_gray": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                }
+            },
+            "required": [
+                "back_default",
+                "back_gray",
+                "back_transparent",
+                "front_default",
+                "front_gray",
+                "front_transparent"
+            ],
+            "title": "RedBlue"
+        },
+        "GenerationIi": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "crystal": {
+                    "$ref": "#/definitions/Crystal"
+                },
+                "gold": {
+                    "$ref": "#/definitions/Gold"
+                },
+                "silver": {
+                    "$ref": "#/definitions/Gold"
+                }
+            },
+            "required": [
+                "crystal",
+                "gold",
+                "silver"
+            ],
+            "title": "GenerationIi"
+        },
+        "Crystal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "back_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_shiny_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_shiny_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                }
+            },
+            "required": [
+                "back_default",
+                "back_shiny",
+                "back_shiny_transparent",
+                "back_transparent",
+                "front_default",
+                "front_shiny",
+                "front_shiny_transparent",
+                "front_transparent"
+            ],
+            "title": "Crystal"
+        },
+        "Gold": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "back_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "back_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_transparent": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                }
+            },
+            "required": [
+                "back_default",
+                "back_shiny",
+                "front_default",
+                "front_shiny"
+            ],
+            "title": "Gold"
+        },
+        "GenerationIii": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "emerald": {
+                    "$ref": "#/definitions/Emerald"
+                },
+                "firered-leafgreen": {
+                    "$ref": "#/definitions/Gold"
+                },
+                "ruby-sapphire": {
+                    "$ref": "#/definitions/Gold"
+                }
+            },
+            "required": [
+                "emerald",
+                "firered-leafgreen",
+                "ruby-sapphire"
+            ],
+            "title": "GenerationIii"
+        },
+        "Emerald": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                }
+            },
+            "required": [
+                "front_default",
+                "front_shiny"
+            ],
+            "title": "Emerald"
+        },
+        "GenerationIv": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "diamond-pearl": {
+                    "$ref": "#/definitions/Sprites"
+                },
+                "heartgold-soulsilver": {
+                    "$ref": "#/definitions/Sprites"
+                },
+                "platinum": {
+                    "$ref": "#/definitions/Sprites"
+                }
+            },
+            "required": [
+                "diamond-pearl",
+                "heartgold-soulsilver",
+                "platinum"
+            ],
+            "title": "GenerationIv"
+        },
+        "GenerationV": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "black-white": {
+                    "$ref": "#/definitions/Sprites"
+                }
+            },
+            "required": [
+                "black-white"
+            ],
+            "title": "GenerationV"
+        },
+        "Home": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "front_default": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_female": {
+                    "type": "null"
+                },
+                "front_shiny": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ],
+                    "qt-uri-extensions": [
+                        ".png"
+                    ]
+                },
+                "front_shiny_female": {
+                    "type": "null"
+                }
+            },
+            "required": [
+                "front_default",
+                "front_female",
+                "front_shiny",
+                "front_shiny_female"
+            ],
+            "title": "Home"
+        },
+        "GenerationVii": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "icons": {
+                    "$ref": "#/definitions/DreamWorld"
+                },
+                "ultra-sun-ultra-moon": {
+                    "$ref": "#/definitions/Home"
+                }
+            },
+            "required": [
+                "icons",
+                "ultra-sun-ultra-moon"
+            ],
+            "title": "GenerationVii"
+        },
+        "GenerationViii": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "icons": {
+                    "$ref": "#/definitions/DreamWorld"
+                }
+            },
+            "required": [
+                "icons"
+            ],
+            "title": "GenerationViii"
+        },
+        "Stat": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "base_stat": {
+                    "type": "integer"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "stat": {
+                    "$ref": "#/definitions/Species"
+                }
+            },
+            "required": [
+                "base_stat",
+                "effort",
+                "stat"
+            ],
+            "title": "Stat"
+        },
+        "Type": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "slot": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/Species"
+                }
+            },
+            "required": [
+                "slot",
+                "type"
+            ],
+            "title": "Type"
+        }
+    }
+}
