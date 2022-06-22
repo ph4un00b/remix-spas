@@ -1,20 +1,55 @@
 import React from 'react'
 import { useQuery, useQueryClient } from 'react-query'
 import { tw } from 'twind'
-import { queryURL } from '../utils.client'
+import { Pokemonos, queryURL, SinglePokemon } from '../utils.client'
 
-export default function Search () {
+function useQueryPokemon (queryKey: string, queryFn: () => Promise<unknown>) {
+  const [data, setData] = React.useState<unknown>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [status, setStatus] = React.useState<'error'|'idle'|'loading'|'success'>('idle')
+
+  const isLoading = status === 'loading'
+  const isSuccess = status === 'success'
+  const isError = status === 'error'
+
+  React.useEffect(() => {
+    if (queryKey === '') return
+
+    setStatus('loading')
+
+    void (async function () {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const result = await queryFn()
+        setData(result)
+        setStatus('success')
+      } catch (error) {
+        setStatus('error')
+        if (error instanceof Error) {
+          setError(error.message)
+        } else {
+          setError('Something weng wrong!')
+        }
+      }
+    })()
+    
+  }, [queryKey])
+
+  return { isError, isLoading, isSuccess, data, error }
+}
+
+function usePokemon (query: string) {
   const queryClient = useQueryClient()
 
-  const [query, setQuery] = React.useState<string>('')
-  const { data, error, isError, isLoading, isSuccess, refetch, isFetching } = useQuery(
+  return useQuery(
     ['pokemon', query],
     async () => await fetchPokemon(query),
     {
       initialData: () => {
-        return queryClient.getQueryData('pokemonos')?.results
-          .find(pokemon => pokemon.name === query)
-          // todo: handle no image better
+        const pokemonos = queryClient.getQueryData('pokemonos') as Pokemonos
+        const pokemon = pokemonos?.results
+          .find((pokemon) => pokemon.name === query) as Pick<SinglePokemon, 'name'>
+        return pokemon
       },
       enabled: false,
       refetchOnWindowFocus: true,
@@ -24,6 +59,13 @@ export default function Search () {
       // retryDelay: () => {}
     }
   )
+}
+
+export default function Search () {
+  const queryClient = useQueryClient()
+
+  const [query, setQuery] = React.useState<string>('')
+  const pokemonQuery = usePokemon(query)
 
   React.useEffect(() => {
     void queryClient.prefetchQuery('pokemonos', fetchPokemonos)
@@ -31,7 +73,7 @@ export default function Search () {
 
   React.useEffect(() => {
     if (query === '') return
-    void refetch()
+    void pokemonQuery.refetch()
   }, [query])
 
   interface Elements { elements: { search: {value: string} } }
@@ -53,7 +95,7 @@ export default function Search () {
       >invalidate pokemonos!
       </button>
 
-      {isFetching && <Info> Updating...  </Info>}
+      {pokemonQuery.isFetching && <Info> Updating...  </Info>}
 
       <form onSubmit={handleSearchSubmit}>
 
@@ -67,7 +109,7 @@ export default function Search () {
               id='search' type='text' placeholder='Type here'
               className='input input-bordered w-full max-w-xs'
             />
-            {isError && (
+            {pokemonQuery.isError && (
 
               <label className='label'>
                 <span className='label-text-alt'>
@@ -75,13 +117,13 @@ export default function Search () {
                 </span>
 
                 <span className='label-text-alt'>
-                  {JSON.stringify(error, undefined, 2)}
+                  {JSON.stringify(pokemonQuery.error, undefined, 2)}
                 </span>
               </label>
 
             )}
 
-            {isLoading && (
+            {pokemonQuery.isLoading && (
 
               <label className='label'>
                 <span className='label-text-alt'>
@@ -91,10 +133,15 @@ export default function Search () {
 
             )}
 
-            {isSuccess && (
+            <pre>{pokemonQuery.isFetched ? 'fetched' : 'no-fetched'}</pre>
+            {pokemonQuery.isSuccess && (
               <>
-                <span>{data.name}</span>
-                <img width={80} src={data.sprites?.front_default ?? ''} alt='pokemon' />
+                <span>{pokemonQuery.data.name}</span>
+                {pokemonQuery.isFetched && (
+
+                  <img width={80} src={(pokemonQuery.data as SinglePokemon).sprites.front_default ?? ''} alt='pokemon' />
+
+                )}
               </>)}
 
           </div>
@@ -103,7 +150,7 @@ export default function Search () {
 
       </form>
 
-      <Pokemonos />
+      <PokemonosTable />
     </>
   )
 }
@@ -122,17 +169,15 @@ function Info ({ children }: {children: React.ReactNode}) {
 }
 
 async function fetchPokemonos () {
-  return await queryURL('pokemon')
+  return await queryURL('pokemon') as Pokemonos
 }
 
-async function fetchPokemon (query: string) {
-  return await queryURL(`pokemon/${encodeURIComponent(query)}`)
+async function fetchPokemon (query: string): Promise<SinglePokemon> {
+  return await queryURL(`pokemon/${encodeURIComponent(query)}`) as SinglePokemon
 }
 
-function Pokemonos () {
-  const queryClient = useQueryClient()
-  // todo validate with zod
-  const { data, error, isError, isLoading, isSuccess, refetch, isFetching } = useQuery(
+function usePokemonos () {
+  return useQuery(
     ['pokemonos'],
     fetchPokemonos,
     {
@@ -147,11 +192,17 @@ function Pokemonos () {
       // retryDelay: () => {}
     }
   )
+}
+
+function PokemonosTable () {
+  const queryClient = useQueryClient()
+  // todo validate with zod
+  const pokemonosQuery = usePokemonos()
 
   return (
     <div className='overflow-x-auto'>
 
-      {isLoading && (<span>Loading monos...</span>)}
+      {pokemonosQuery.isLoading && (<span>Loading monos...</span>)}
 
       <table className='table table-compact w-full'>
         <thead>
@@ -163,7 +214,7 @@ function Pokemonos () {
         </thead>
         <tbody>
 
-          {isSuccess && data.results.map((pokemon: {name: string, url: string}, id: number) => {
+          {pokemonosQuery.isSuccess && pokemonosQuery.data.results.map((pokemon, id) => {
             return (
               <tr key={id}>
                 <th>{id}</th>
