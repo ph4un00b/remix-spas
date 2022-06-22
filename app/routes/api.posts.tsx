@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createPost, posts } from '~/services/posts.server'
 import { db } from '~/utils.server'
 
-interface LoaderData {
+export interface PostsResponse {
   next?: { page: number, limit: number}
   prev?: { page: number, limit: number}
   total: number
@@ -19,7 +19,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const end = page * limit
 
   const postsCount = await db.post.count()
-  const data: LoaderData = {
+  const data: PostsResponse = {
     posts: await posts(start, end, limit),
     total: postsCount
   }
@@ -32,7 +32,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     data.prev = { page: page - 1, limit }
   }
 
-  return json<LoaderData>(data)
+  return json<PostsResponse>(data)
 }
 
 export async function action ({ request }: {request: Request}) {

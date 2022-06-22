@@ -1,11 +1,12 @@
 import React from 'react'
 import { json, LoaderFunction, redirect } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
-import { useMutation, useQuery, useQueryClient } from 'react-query'
+import { QueryFunctionContext, useMutation, useQuery, useQueryClient } from 'react-query'
 import { z } from 'zod'
 import { createPost, Post, posts } from '~/services/posts.server'
 import { Route, Router, useRoute } from 'wouter'
 import { tw } from 'twind'
+import { PostsResponse } from './api.posts'
 
 interface LoaderData {
   posts: Awaited<ReturnType<typeof posts>>
@@ -39,30 +40,43 @@ function Rutas () {
   )
 }
 
+interface PostResponse {
+  post: Post
+}
+
+async function fetchPost (q: QueryFunctionContext): Promise<PostResponse> {
+  const [id, postId] = q.queryKey
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  const resp = await fetch(`/api/posts/${postId}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
+  if (!resp.ok) throw new Error('Something went wrong!')
+  return await resp.json()
+}
+
+function usePost (id: string) {
+  return useQuery(['post', id], fetchPost)
+}
+
+async function updatePost (values: Pick<Post, 'id'|'title'|'body'>): Promise<Post> {
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  const resp = await fetch(`/api/posts/${values.id}`, { body: JSON.stringify(values), method: 'post', headers: { 'Content-Type': 'application/json' } })
+  if (!resp.ok) throw new Error('Something went wrong!')
+  return await resp.json()
+}
 function SinglePost () {
   const queryClient = useQueryClient()
   const [,{ postId }] = useRoute('/edit/:postId')
 
-  const postQuery = useQuery(['post', String(postId)], async () => {
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch(`/api/posts/${postId}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
-    if (!resp.ok) throw new Error('Something went wrong!')
-    return await resp.json()
-  })
+  const postQuery = usePost(String(postId))
 
-  const mutation = useMutation(async (values) => {
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch(`/api/posts/${values.id}`, { body: JSON.stringify(values), method: 'post', headers: { 'Content-Type': 'application/json' } })
-    if (!resp.ok) throw new Error('Something went wrong!')
-    return await resp.json()
-  }, {
+  const mutation = useMutation(updatePost, {
     onMutate: (currentValues) => {
       // prevent rece conditions
       void queryClient.cancelQueries(['post', currentValues.id])
 
-      const oldData = queryClient.getQueryData(['post', currentValues.id])
+      const oldData = queryClient.getQueryData(['post', currentValues.id]) as PostResponse
 
-      queryClient.setQueryData(['post', currentValues.id], (old) => {
+      //  todo: normalize response for get and post
+      queryClient.setQueryData<PostResponse>(['post', currentValues.id], (old) => {
         console.log(old, currentValues)
         return {
           post: {
@@ -108,7 +122,7 @@ function SinglePost () {
             mutation.mutate(data)
           }}
           >
-            <input type='text' name='title' defaultValue={postQuery.data.post.title} />
+            <input type='text' name='title' defaultValue={postQuery.data.post.title ?? ''} />
             <input type='hidden' name='id' defaultValue={postQuery.data.post.id} />
             <br />
             <button type='submit'>{
@@ -130,7 +144,7 @@ function SinglePost () {
   )
 }
 
-async function fetchPosts ({ queryKey }) {
+async function fetchPosts ({ queryKey }: QueryFunctionContext): Promise<PostsResponse> {
   const [,{ page }] = queryKey
   await new Promise(resolve => setTimeout(resolve, 2000))
   const resp = await fetch(`/api/posts?page=${page}&limit=${10}`, { method: 'get', headers: { 'Content-Type': 'application/json' } })
@@ -138,10 +152,21 @@ async function fetchPosts ({ queryKey }) {
   return await resp.json()
 }
 
+async function newPost (data): Promise<Post> {
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  const resp = await fetch('/api/posts', {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!resp.ok) throw new Error('Something went wrong!')
+  return await resp.json()
+}
+
 function Posts () {
   const [page, setPage] = React.useState<number>(1)
   const queryClient = useQueryClient()
-  const initialData = useLoaderData<LoaderData>()
+  const initialData = useLoaderData<PostsResponse>()
   const action = useActionData<ActionDataErrors>()
 
   const posts = useQuery(['posts', { page }], fetchPosts,
@@ -169,15 +194,7 @@ function Posts () {
     mutation.mutate(data)
   }
 
-  const mutation = useMutation(async (data) => {
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    const resp = await fetch('/api/posts', {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    if (!resp.ok) throw new Error('Something went wrong!')
-  }, {
+  const mutation = useMutation(newPost, {
     onMutate: (currentValues) => {
       console.log('currentValues', currentValues)
       // todo:  validate data before
@@ -244,7 +261,7 @@ function Posts () {
         fields={action?.fields}
       />
 
-      {mutation.isError && <pre>{JSON.stringify(mutation.error.message)}</pre>}
+      {mutation.isError && <pre>{JSON.stringify((mutation.error as Error).message)}</pre>}
 
       <button
         disabled={page === 1}
@@ -255,7 +272,7 @@ function Posts () {
 
       {/* todo: handle better UX when user clicks quickly */}
       <button
-        disabled={!posts.data?.next}
+        disabled={(posts.data?.next) == null}
         className='btn btn-secondary' onClick={(old) => setPage(old => old + 1)}
       >
         Next

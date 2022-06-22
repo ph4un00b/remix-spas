@@ -32,7 +32,6 @@ function useQueryPokemon (queryKey: string, queryFn: () => Promise<unknown>) {
         }
       }
     })()
-    
   }, [queryKey])
 
   return { isError, isLoading, isSuccess, data, error }
@@ -48,6 +47,7 @@ function usePokemon (query: string) {
       initialData: () => {
         const pokemonos = queryClient.getQueryData('pokemonos') as Pokemonos
         const pokemon = pokemonos?.results
+        // cache only have name and url fiedls
           .find((pokemon) => pokemon.name === query) as Pick<SinglePokemon, 'name'>
         return pokemon
       },
@@ -64,7 +64,7 @@ function usePokemon (query: string) {
 export default function Search () {
   const queryClient = useQueryClient()
 
-  const [query, setQuery] = React.useState<string>('')
+  const [query, setQuery] = React.useState<string>('pikachu')
   const pokemonQuery = usePokemon(query)
 
   React.useEffect(() => {
@@ -172,7 +172,7 @@ async function fetchPokemonos () {
   return await queryURL('pokemon') as Pokemonos
 }
 
-async function fetchPokemon (query: string): Promise<SinglePokemon> {
+async function fetchPokemon (query: string) {
   return await queryURL(`pokemon/${encodeURIComponent(query)}`) as SinglePokemon
 }
 
