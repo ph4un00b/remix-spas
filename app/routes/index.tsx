@@ -104,9 +104,7 @@ export default function Index () {
   const action = useActionData<ActionDataErrors>()
 
   const loginMutation = useMutation('user', loginUser, {
-    onSuccess: (a) => {
-      console.log('success', a)
-    }
+    onSuccess: (a) => { console.log('success', a) }
   })
 
   const me = useQuery('user', async () => {
@@ -115,9 +113,6 @@ export default function Index () {
     setUser(user as LoginPayload)
     return user
   })
-
-  React.useEffect(() => {
-  }, [])
 
   async function login (formData: User) {
     loginMutation.mutate(formData, {
