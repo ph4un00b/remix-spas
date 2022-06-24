@@ -1,9 +1,12 @@
 import { json, redirect } from '@remix-run/node'
 import { useActionData } from '@remix-run/react'
+import localforage from 'localforage'
 import React from 'react'
+import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { tw } from 'twind'
 import z from 'zod'
 import { createUser } from '~/services/users.server'
+import { LoginPayload } from './api.login'
 
 const userValidator = z.object({
   username: z.string().email(),
@@ -41,32 +44,36 @@ export async function action ({ request }: {request: Request}) {
   return redirect('/')
 }
 
-export default function Index () {
+async function loginUser (credentials: User): Promise<LoginPayload> {
+  const headers = { 'Content-Type': 'application/json' }
+
+  await new Promise(resolve => setTimeout(resolve, 2400))
+  try {
+    const resp = await fetch('api/login',
+      { method: 'post', headers, body: JSON.stringify(credentials) })
+    const payload = await resp.json()
+    if (resp.ok) { return payload }
+    throw new Error('hola!')
+  } catch (e) {
+    throw new Error('Something went wrong on login!')
+  }
+}
+
+function isBrowser (): boolean {
+  return typeof document !== 'undefined'
+}
+
+function UnauthApp ({ login, signup }: {login: (data: User) => void, signup: (data: User) => void}) {
   const [openModal, setOpenModal] = React.useState<'none' | 'login' | 'register'>('none')
   const dialogRef = React.useRef<HTMLInputElement>(null)
-  const action = useActionData<ActionDataErrors>()
 
   React.useEffect(() => {
     if (dialogRef.current === null) return
-    if (openModal === 'none') {
-      dialogRef.current.checked = false
-    } else {
-      dialogRef.current.checked = true
-    }
+    if (openModal === 'none') { dialogRef.current.checked = false } else { dialogRef.current.checked = true }
   }, [openModal])
 
-  function login (formData: User) {
-    console.log('login', formData)
-  }
-
-  function signup (formData: User) {
-    console.log('signup', formData)
-  }
-
-  console.log('modal', openModal)
   return (
     <>
-      {((action?.errors) != null) && (<pre>{JSON.stringify(action.errors, undefined, 2)}</pre>)}
       {logo}
       <h1>Hey!</h1>
       <div>
@@ -82,12 +89,74 @@ export default function Index () {
           {openModal}
         </h3>
 
-        {openModal === 'login' && (<PostForm onSubmit={login} btnText='login' />)}
-        {openModal === 'register' && (<PostForm onSubmit={signup} btnText='signup' />)}
+        {openModal === 'login' && (<PostForm onSubmitEvent={login} btnText='login' />)}
+        {openModal === 'register' && (<PostForm onSubmitEvent={signup} btnText='signup' />)}
 
-      </Dialog>}
+                               </Dialog>}
     </>
+
   )
+}
+export default function Index () {
+  const queryClient = useQueryClient()
+  const [user, setUser] = React.useState<LoginPayload | null>(null)
+  const [error, setError] = React.useState<unknown | null>(null)
+  const action = useActionData<ActionDataErrors>()
+
+  const loginMutation = useMutation('user', loginUser, {
+    onSuccess: (a) => {
+      console.log('success', a)
+    }
+  })
+
+  const me = useQuery('user', async () => {
+    await new Promise(resolve => setTimeout(resolve, 2400))
+    const user = await localforage.getItem('remix-spas-user')
+    setUser(user as LoginPayload)
+    return user
+  })
+
+  React.useEffect(() => {
+  }, [])
+
+  async function login (formData: User) {
+    loginMutation.mutate(formData, {
+      onSuccess: async (a) => {
+        console.log('succes-2', a)
+        setUser(a)
+        await localforage.setItem('remix-spas-user', a)
+      },
+      onError: (e) => {
+        // console.error('catch',  e)
+        setError(e)
+      }
+    })
+  }
+
+  function signup (formData: User) {
+    console.log('signup', formData)
+  }
+
+  async function logout () {
+    await localforage.removeItem('remix-spas-user')
+    setUser(null)
+  }
+
+  if (me.isLoading) return <pre>root loading...</pre>
+  if (me.isError) return <pre>error  {(me.error as Error).message}</pre>
+
+  if (user == null) {
+    return <UnauthApp login={login} signup={signup} />
+  } else {
+    return (
+      <>
+        {((action?.errors) != null) && (<pre>{JSON.stringify(action.errors, undefined, 2)}</pre>)}
+
+        <h1>Hey! {user?.role} {user?.email}</h1>
+        <button onClick={logout} className='btn btn-secondary'>Logout</button>
+      </>
+    )
+  }
 }
 
 const logo = (
@@ -130,9 +199,9 @@ const Dialog = React.forwardRef<HTMLInputElement, DialogOpts>(({ children, close
 })
 
 interface Elements { elements: { username: {value: string}, password: {value: string} } }
-interface PostFormOpts {onSubmit: (data: User) => void, btnText: string}
+interface PostFormOpts {onSubmitEvent: (data: User) => void, btnText: string}
 
-function PostForm ({ onSubmit, btnText }: PostFormOpts) {
+function PostForm ({ onSubmitEvent, btnText }: PostFormOpts) {
   return (
 
     <form
@@ -140,7 +209,8 @@ function PostForm ({ onSubmit, btnText }: PostFormOpts) {
         e.preventDefault()
 
         console.log('on-submit!')
-        console.log(Object.fromEntries((new FormData(e.target))))
+        const credentials = Object.fromEntries((new FormData(e.target as HTMLFormElement)))
+        onSubmitEvent(credentials as User)
       }}
       method='post' action='?index'
     >
